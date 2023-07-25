@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:shake/shake.dart';
 import 'package:surf_practice_magic_ball/domain/providers/ball_provider.dart';
 import 'package:surf_practice_magic_ball/resources/resources.dart';
 
@@ -27,13 +28,22 @@ class HomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const MagicBall(),
-              const SizedBox(height: 50),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: SvgPicture.asset(
-                  AppIcons.shadow,
-                ),
+              const SizedBox(height: 100),
+              SvgPicture.asset(
+                AppIcons.shadow,
               ),
+              const SizedBox(height: 50),
+              const SizedBox(
+                width: 175,
+                child: Text(
+                  'Нажмите на шар или потрясите телефон',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xff727272),
+                    fontSize: 16,
+                  ),
+                ),
+              )
             ],
           ),
         ),
@@ -55,6 +65,7 @@ class _MagicBallState extends State<MagicBall> with TickerProviderStateMixin {
   late AnimationController _ballController;
   final double maxOffsetValue = 50;
   final Curve curve = Curves.bounceOut;
+  ShakeDetector? detecror;
 
   @override
   void initState() {
@@ -81,8 +92,20 @@ class _MagicBallState extends State<MagicBall> with TickerProviderStateMixin {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+
+    if (detecror != null) {
+      detecror!.stopListening();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ballProvider = context.read<BallProvider>();
+    detecror = ShakeDetector.autoStart(onPhoneShake: ballProvider.getAnswer);
+    detecror?.startListening();
+
 
     return GestureDetector(
       onTap: () async => await ballProvider.getAnswer(),
@@ -119,14 +142,10 @@ class BallContent extends StatelessWidget {
     return SizedBox(
       width: 275,
       child: Text(
-        
         model.answer ?? "",
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 32,
-          color: Colors.white,
-          height: 32 /36
-        ),
+        style:
+            const TextStyle(fontSize: 32, color: Colors.white, height: 32 / 36),
       ),
     );
   }
