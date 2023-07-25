@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:shake/shake.dart';
+import 'package:surf_practice_magic_ball/app_constatnt.dart';
 import 'package:surf_practice_magic_ball/domain/providers/ball_provider.dart';
 import 'package:surf_practice_magic_ball/resources/resources.dart';
+
+import 'package:flutter/services.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -65,7 +68,9 @@ class _MagicBallState extends State<MagicBall> with TickerProviderStateMixin {
   late AnimationController _ballController;
   final double maxOffsetValue = 50;
   final Curve curve = Curves.bounceOut;
+
   ShakeDetector? detecror;
+  bool canTap = true;
 
   @override
   void initState() {
@@ -73,7 +78,7 @@ class _MagicBallState extends State<MagicBall> with TickerProviderStateMixin {
 
     _ballController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 5),
+      duration: AppConstants.ballAnimationDuration,
     )
       ..forward()
       ..addListener(
@@ -100,15 +105,25 @@ class _MagicBallState extends State<MagicBall> with TickerProviderStateMixin {
     }
   }
 
+  void action(BuildContext context) async {
+    if (!canTap) return;
+    canTap = false;
+
+    final ballProvider = context.read<BallProvider>();
+
+    await HapticFeedback.vibrate();
+    await ballProvider.getAnswer(AppConstants.ballAnimationDuration);
+
+    canTap = true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ballProvider = context.read<BallProvider>();
-    detecror = ShakeDetector.autoStart(onPhoneShake: ballProvider.getAnswer);
+    detecror = ShakeDetector.autoStart(onPhoneShake: () => action(context));
     detecror?.startListening();
 
-
     return GestureDetector(
-      onTap: () async => await ballProvider.getAnswer(),
+      onTap: () => action(context),
       child: Center(
         child: AnimatedBuilder(
           animation: _ballController,
@@ -133,20 +148,93 @@ class _MagicBallState extends State<MagicBall> with TickerProviderStateMixin {
 }
 
 class BallContent extends StatelessWidget {
-  const BallContent({super.key});
+  const BallContent({
+    super.key,
+  });
+
+  Widget getShadow(Color color) {
+    return Center(
+      child: Container(
+        width: 250,
+        height: 250,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(125),
+          boxShadow: [
+            BoxShadow(
+              color: color,
+              blurRadius: 125,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final model = context.watch<BallProvider>().ball;
+    final isWaiting = model.isWaiting;
 
-    return SizedBox(
-      width: 275,
-      child: Text(
-        model.answer ?? "",
-        textAlign: TextAlign.center,
-        style:
-            const TextStyle(fontSize: 32, color: Colors.white, height: 32 / 36),
+    final answer =
+        model.answer ?? (model.haveError ? AppConstants.errorMessage : "");
+
+    final color = model.haveError
+        ? Colors.red
+        : answer.isEmpty
+            ? Colors.transparent
+            : Colors.black;
+
+    const styleWithoutError = TextStyle(
+      fontSize: 32,
+      color: Colors.white,
+      height: 32 / 36,
+      shadows: [
+        Shadow(
+          color: Colors.black,
+          blurRadius: 30,
+        ),
+      ],
+    );
+    const styleWithError = TextStyle(
+      fontSize: 16,
+      color: Colors.white,
+      shadows: [
+        Shadow(
+          color: Colors.black,
+          blurRadius: 30,
+        ),
+      ],
+    );
+
+    return TweenAnimationBuilder(
+      key: UniqueKey(),
+      tween: Tween<double>(
+        begin: isWaiting ? 1 : 0,
+        end: isWaiting ? 0 : 1,
       ),
+      duration: AppConstants.ballAnimationDuration,
+      child: SizedBox(
+        width: 250,
+        child: Text(
+          answer,
+          textAlign: TextAlign.center,
+          style: model.haveError ? styleWithError : styleWithoutError,
+        ),
+      ),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Stack(
+            children: [
+              Transform.scale(
+                scale: value,
+                child: getShadow(color),
+              ),
+              Center(child: child),
+            ],
+          ),
+        );
+      },
     );
   }
 }

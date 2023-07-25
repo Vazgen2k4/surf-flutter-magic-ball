@@ -16,17 +16,15 @@ abstract class MagicBallApi {
 
     try {
       final response = await http.get(url);
-      
-      final Map<String, dynamic>? result  = json.decode(response.body);
+      final Map<String, dynamic>? result = json.decode(response.body);
       
       return result;
-
+      
     } catch (e) {
       if (kDebugMode) {
         print(e);
       }
     }
     return null;
-
   }
 }
