@@ -111,7 +111,7 @@ class _MagicBallState extends State<MagicBall> with TickerProviderStateMixin {
 
     final ballProvider = context.read<BallProvider>();
 
-    await HapticFeedback.vibrate();
+    await HapticFeedback.heavyImpact();
     await ballProvider.getAnswer(AppConstants.ballAnimationDuration);
 
     canTap = true;
