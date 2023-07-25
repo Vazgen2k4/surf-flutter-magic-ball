@@ -26,6 +26,7 @@ abstract class MagicBallApi {
         print(e);
       }
     }
+    return null;
 
   }
 }

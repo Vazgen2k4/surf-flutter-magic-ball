@@ -1,8 +1,6 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:surf_practice_magic_ball/domain/api/magic_ball_api.dart';
 import 'package:surf_practice_magic_ball/domain/providers/ball_provider.dart';
 import 'package:surf_practice_magic_ball/resources/resources.dart';
 
